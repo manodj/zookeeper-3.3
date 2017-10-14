@@ -38,9 +38,10 @@ import org.apache.log4j.Logger;
 public class BookieServer implements NIOServerFactory.PacketProcessor, BookkeeperInternalCallbacks.WriteCallback {
     int port;
     NIOServerFactory nioServerFactory;
-    volatile boolean down = false;
+    private volatile boolean down = false;
     Bookie bookie;
     static Logger LOG = Logger.getLogger(BookieServer.class);
+    private volatile boolean running = false;
 
     public BookieServer(int port, String zkServers, File journalDirectory, File ledgerDirectories[]) throws IOException {
         this.port = port;
@@ -49,16 +50,23 @@ public class BookieServer implements NIOServerFactory.PacketProcessor, Bookkeepe
 
     public void start() throws IOException {
         nioServerFactory = new NIOServerFactory(port, this);
+        running=true;
     }
 
     public void shutdown() throws InterruptedException {
-        down = true;
+        running=false;
         nioServerFactory.shutdown();
         bookie.shutdown();
     }
 
     public boolean isDown() {
         return down;
+    }
+
+    public boolean isRunning(){
+        if (bookie.isRunning() && nioServerFactory.isRunning() && running) {
+            return true;
+        } else return false;
     }
 
     public void join() throws InterruptedException {

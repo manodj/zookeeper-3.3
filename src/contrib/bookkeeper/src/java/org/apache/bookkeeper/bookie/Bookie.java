@@ -68,6 +68,9 @@ public class Bookie extends Thread {
     // ZooKeeper client instance for the Bookie
     ZooKeeper zk;
 
+    // flag for running.Initially setting it to false
+    private volatile boolean running = false;
+
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
         private long ledgerId;
@@ -253,6 +256,10 @@ public class Bookie extends Thread {
         }
     }
 
+    public boolean isRunning(){
+        return running;
+    }
+
     private LedgerDescriptor getHandle(long ledgerId, boolean readonly, byte[] masterKey) throws IOException {
         LedgerDescriptor handle = null;
         synchronized (ledgers) {
@@ -374,9 +381,9 @@ public class Bookie extends Thread {
             }
         }
     }
-    
+
     private LastLogMark lastLogMark = new LastLogMark(0, 0);
-    
+
     @Override
     public void run() {
         LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
@@ -386,6 +393,7 @@ public class Bookie extends Thread {
             FileChannel logFile = openChannel(logId);
             BufferedChannel bc = new BufferedChannel(logFile, 65536);
             zeros.clear();
+            running = true;
             long nextPrealloc = preAllocSize;
             long lastFlushPosition = 0;
             logFile.write(zeros, nextPrealloc);
@@ -431,6 +439,7 @@ public class Bookie extends Thread {
         } catch (Exception e) {
             LOG.fatal("Bookie thread exiting", e);
         }
+        running = false;
     }
 
     private FileChannel openChannel(long logId) throws FileNotFoundException {

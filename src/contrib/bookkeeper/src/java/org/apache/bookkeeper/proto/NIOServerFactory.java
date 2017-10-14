@@ -69,6 +69,12 @@ public class NIOServerFactory extends Thread {
 
     long minLatency = 99999999;
 
+    public  boolean isRunning() {
+        boolean stat =ss.socket().isClosed();
+        if (!stat) return true;
+        else return false;
+    }
+
     public NIOServerFactory(int port, PacketProcessor processor) throws IOException {
         super("NIOServerFactory");
         setDaemon(true);
